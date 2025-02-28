@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   deepResearch,
@@ -7,28 +7,23 @@ import {
 } from "@/lib/deep-research";
 import { createModel, type AIModel } from "@/lib/deep-research/ai/providers";
 
+const firecrawlKey = process.env.FIRECRAWL_KEY;
+if (!firecrawlKey) throw new Error("Missing FIRECRAWL_KEY");
+
 export async function POST(req: NextRequest) {
   try {
     const {
       query,
       breadth = 3,
       depth = 2,
-      modelId = "o3-mini",
+      modelId = "openai/o3-mini",
     } = await req.json();
 
-    // Retrieve API keys from secure cookies
-    const openaiKey = req.cookies.get("openai-key")?.value;
-    const firecrawlKey = req.cookies.get("firecrawl-key")?.value;
-
-    // Add API key validation
-    if (process.env.NEXT_PUBLIC_ENABLE_API_KEYS === "true") {
-      if (!openaiKey || !firecrawlKey) {
-        return Response.json(
-          { error: "API keys are required but not provided" },
-          { status: 401 }
-        );
-      }
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const brainLinkAccesstoken = authHeader.split(" ")[1];
 
     console.log("\n🔬 [RESEARCH ROUTE] === Request Started ===");
     console.log("Query:", query);
@@ -37,13 +32,9 @@ export async function POST(req: NextRequest) {
       breadth,
       depth,
     });
-    console.log("API Keys Present:", {
-      OpenAI: openaiKey ? "✅" : "❌",
-      FireCrawl: firecrawlKey ? "✅" : "❌",
-    });
 
     try {
-      const model = createModel(modelId as AIModel, openaiKey);
+      const model = createModel(modelId as AIModel, brainLinkAccesstoken);
       console.log("\n🤖 [RESEARCH ROUTE] === Model Created ===");
       console.log("Using Model:", modelId);
 
@@ -58,7 +49,7 @@ export async function POST(req: NextRequest) {
           const feedbackQuestions = await generateFeedback({
             query,
             modelId,
-            apiKey: openaiKey,
+            apiKey: brainLinkAccesstoken,
           });
           await writer.write(
             encoder.encode(

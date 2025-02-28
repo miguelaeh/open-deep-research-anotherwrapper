@@ -11,6 +11,7 @@ import DownloadTxtButton from "./download-txt";
 import { MultimodalInput } from "./input";
 import { PreviewMessage, ProgressStep } from "./message";
 import { ResearchProgress } from "./research-progress";
+import * as BrainLink from "@brainlink/spa-sdk";
 
 export function Chat({
   id,
@@ -65,6 +66,21 @@ export function Chat({
     try {
       setIsLoading(true);
       setProgress([]);
+
+      if (!BrainLink.isConnected()) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: "Please link your brain by clicking on the BrainLink button before conducting research.",
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
+      const brainLinkUserAccessToken = await BrainLink.getUserToken();
+
       // Inform the user that research has started
       setMessages((prev) => [
         ...prev,
@@ -79,6 +95,7 @@ export function Chat({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${brainLinkUserAccessToken}`,
         },
         body: JSON.stringify({
           query,
@@ -190,6 +207,23 @@ export function Chat({
     setIsLoading(true);
 
     if (stage === "initial") {
+      // Handle the user's initial query
+      setInitialQuery(userInput);
+
+      if (!BrainLink.isConnected()) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: "Please link your brain by clicking on the BrainLink button before conducting research.",
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
+      const brainLinkUserAccessToken = await BrainLink.getUserToken();
+
       // Add thinking message only for initial query
       setMessages((prev) => [
         ...prev,
@@ -200,13 +234,13 @@ export function Chat({
         },
       ]);
 
-      // Handle the user's initial query
-      setInitialQuery(userInput);
-
       try {
         const response = await fetch("/api/feedback", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${brainLinkUserAccessToken}`,
+          },
           body: JSON.stringify({
             query: userInput,
             numQuestions: 3,
@@ -274,9 +308,8 @@ export function Chat({
     <div className="flex w-full h-full relative">
       {/* Main container with dynamic width */}
       <motion.div
-        className={`mx-auto flex flex-col h-full pt-10 ${
-          hasStartedResearch ? "md:mr-0" : "md:mx-auto"
-        }`}
+        className={`mx-auto flex flex-col h-full pt-10 ${hasStartedResearch ? "md:mr-0" : "md:mx-auto"
+          }`}
         initial={{ width: "100%", maxWidth: "800px" }}
         animate={{
           width: !isMobile && hasStartedResearch ? "55%" : "100%",
@@ -287,9 +320,8 @@ export function Chat({
         {/* Messages Container */}
         <div
           ref={containerRef}
-          className={`${
-            showProgress ? "hidden md:block" : "block"
-          } flex-1 overflow-y-auto relative`}
+          className={`${showProgress ? "hidden md:block" : "block"
+            } flex-1 overflow-y-auto relative`}
         >
           {/* Welcome Message (if no research started and no messages) */}
           {!hasStartedResearch && messages.length === 0 && (
@@ -303,10 +335,10 @@ export function Chat({
                   damping: 20,
                 }}
                 className="relative text-center space-y-4 p-4 md:p-12
-                  before:absolute before:inset-0 
+                  before:absolute before:inset-0
                   before:bg-gradient-to-b before:from-primary/[0.03] before:to-primary/[0.01]
                   before:rounded-[32px] before:blur-xl before:-z-10
-                  after:absolute after:inset-0 
+                  after:absolute after:inset-0
                   after:bg-gradient-to-br after:from-primary/[0.08] after:via-transparent after:to-primary/[0.03]
                   after:rounded-[32px] after:blur-md after:-z-20"
               >
@@ -332,7 +364,7 @@ export function Chat({
                       repeat: Infinity,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/30 
+                    className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/30
                       blur-2xl rounded-full -z-10"
                   />
                   <BrainCircuitIcon className="w-12 h-12 mx-auto text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.3)]" />
@@ -343,7 +375,7 @@ export function Chat({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="text-base md:text-2xl font-semibold bg-clip-text text-transparent 
+                    className="text-base md:text-2xl font-semibold bg-clip-text text-transparent
                       bg-gradient-to-r from-primary via-primary/90 to-primary/80"
                   >
                     Open Deep Research
@@ -367,10 +399,10 @@ export function Chat({
                     className="pt-2"
                   >
                     <a
-                      href="https://github.com/fdarkaou/open-deep-research"
+                      href="https://github.com/miguelaeh/open-deep-research-anotherwrapper"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-2 py-1 md:px-6 md:py-2.5 text-xs md:text-sm font-medium 
+                      className="inline-flex items-center px-2 py-1 md:px-6 md:py-2.5 text-xs md:text-sm font-medium
                         bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/15 hover:to-primary/10
                         text-primary hover:text-primary/90 rounded-full transition-all duration-300
                         shadow-[0_0_0_1px_rgba(var(--primary),0.1)] hover:shadow-[0_0_0_1px_rgba(var(--primary),0.2)]
@@ -409,8 +441,8 @@ export function Chat({
                 stage === "initial"
                   ? "What would you like to research?"
                   : stage === "feedback"
-                  ? "Please provide your answers to the follow-up questions..."
-                  : "Research in progress..."
+                    ? "Please provide your answers to the follow-up questions..."
+                    : "Research in progress..."
               }
             />
           </div>

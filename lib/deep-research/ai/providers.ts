@@ -5,20 +5,20 @@ import { RecursiveCharacterTextSplitter } from './text-splitter';
 
 // Model Display Information
 export const AI_MODEL_DISPLAY = {
-  'gpt-4o': {
-    id: 'gpt-4o',
+  'openai/gpt-4o': {
+    id: 'openai/gpt-4o',
     name: 'GPT-4o',
     logo: '/providers/openai.webp',
     vision: true,
   },
-  'gpt-4o-mini': {
-    id: 'gpt-4o-mini',
+  'openai/gpt-4o-mini': {
+    id: 'openai/gpt-4o-mini',
     name: 'GPT-4o mini',
     logo: '/providers/openai.webp',
     vision: true,
   },
-  'o3-mini': {
-    id: 'o3-mini',
+  'openai/o3-mini': {
+    id: 'openai/o3-mini',
     name: 'o3 mini',
     logo: '/providers/openai.webp',
     vision: false,
@@ -29,20 +29,16 @@ export type AIModel = keyof typeof AI_MODEL_DISPLAY;
 export type AIModelDisplayInfo = (typeof AI_MODEL_DISPLAY)[AIModel];
 export const availableModels = Object.values(AI_MODEL_DISPLAY);
 
-// OpenAI Client
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_KEY!,
-});
-
 // Create model instances with configurations
 export function createModel(modelId: AIModel, apiKey?: string) {
   const client = createOpenAI({
-    apiKey: apiKey || process.env.OPENAI_KEY!,
+    baseURL: "https://www.brainlink.dev/api/v1",
+    apiKey: apiKey,
   });
 
   return client(modelId, {
     structuredOutputs: true,
-    ...(modelId === 'o3-mini' ? { reasoningEffort: 'medium' } : {}),
+    ...(modelId === 'openai/o3-mini' ? { reasoningEffort: 'medium' } : {}),
   });
 }
 

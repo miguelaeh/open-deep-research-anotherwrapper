@@ -20,6 +20,7 @@ import {
   type AIModelDisplayInfo,
 } from "@/lib/deep-research/ai/providers";
 import { ApiKeyDialog } from "@/components/chat/api-key-dialog";
+import BrainLinkButton from "@brainlink/react-button";
 
 interface MultimodalInputProps {
   onSubmit: (
@@ -48,57 +49,15 @@ export function MultimodalInput({
   const [breadth, setBreadth] = useState(4);
   const [depth, setDepth] = useState(2);
   const [selectedModel, setSelectedModel] = useState<AIModelDisplayInfo>(
-    availableModels.find((model) => model.id === "o3-mini") ||
+    availableModels.find((model) => model.id === "openai/o3-mini") ||
       availableModels[0]
   );
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [hasKeys, setHasKeys] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Read the feature flag from environment variables.
-  const enableApiKeys = process.env.NEXT_PUBLIC_ENABLE_API_KEYS === "true";
-  // When API keys are disabled via env flag, always consider keys as present.
-  const effectiveHasKeys = enableApiKeys ? hasKeys : true;
-
-  // Check for keys using the consolidated endpoint
-  useEffect(() => {
-    const checkKeys = async () => {
-      const res = await fetch("/api/keys");
-      const data = await res.json();
-      setHasKeys(data.keysPresent);
-      if (!data.keysPresent && enableApiKeys) {
-        setShowApiKeyPrompt(true);
-      } else {
-        setShowApiKeyPrompt(false);
-      }
-    };
-    checkKeys();
-  }, [enableApiKeys]);
-
-  // New: Remove API keys handler
-  const handleRemoveKeys = async () => {
-    if (!window.confirm("Are you sure you want to remove your API keys?"))
-      return;
-    try {
-      const res = await fetch("/api/keys", {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setHasKeys(false);
-      }
-    } catch (error) {
-      console.error("Error removing keys:", error);
-    }
-  };
-
   const handleSubmit = () => {
     if (!input.trim() || isLoading) return;
-    if (enableApiKeys && !effectiveHasKeys) {
-      // Re-open the API key modal if keys are missing
-      setShowApiKeyPrompt(true);
-      return;
-    }
     onSubmit(input, {
       breadth,
       depth,
@@ -128,18 +87,6 @@ export function MultimodalInput({
 
   return (
     <div className="relative w-full flex flex-col gap-4 border-none">
-      {/* Conditionally render API key dialog only if enabled */}
-      {enableApiKeys && (
-        <ApiKeyDialog
-          show={showApiKeyPrompt}
-          onClose={setShowApiKeyPrompt}
-          onSuccess={() => {
-            setShowApiKeyPrompt(false);
-            setHasKeys(true);
-          }}
-        />
-      )}
-
       <textarea
         ref={textareaRef}
         placeholder={placeholder}
@@ -161,37 +108,6 @@ export function MultimodalInput({
 
       {/* Mobile Controls - Shown in a row above the input */}
       <div className="md:hidden flex flex-wrap gap-2 px-4 py-2 border-t border-border/40 bg-background/80 rounded-xl backdrop-blur-sm">
-        {/* API Keys Status */}
-        <button
-          type="button"
-          onClick={
-            enableApiKeys
-              ? effectiveHasKeys
-                ? handleRemoveKeys
-                : () => setShowApiKeyPrompt(true)
-              : undefined
-          }
-          className="flex items-center gap-1"
-        >
-          {enableApiKeys ? (
-            effectiveHasKeys ? (
-              <>
-                <CheckCircleIcon size={16} className="text-green-500" />
-                <span className="text-xs text-green-600">
-                  API keys configured
-                </span>
-              </>
-            ) : (
-              <>
-                <XCircleIcon size={16} className="text-red-500" />
-                <span className="text-xs text-red-600">API keys missing</span>
-              </>
-            )
-          ) : (
-            <span className="text-xs text-green-600">Using .env API keys</span>
-          )}
-        </button>
-
         {/* Model Selector with Dropdown */}
         <div className="relative">
           <button
@@ -280,37 +196,6 @@ export function MultimodalInput({
 
       {/* Desktop Controls - Original layout */}
       <div className="hidden md:flex bg-white absolute bottom-0 py-3 left-2 gap-2 items-center">
-        {/* Original desktop controls - unchanged */}
-        <button
-          type="button"
-          onClick={
-            enableApiKeys
-              ? effectiveHasKeys
-                ? handleRemoveKeys
-                : () => setShowApiKeyPrompt(true)
-              : undefined
-          }
-          className="flex items-center gap-1"
-        >
-          {enableApiKeys ? (
-            effectiveHasKeys ? (
-              <>
-                <CheckCircleIcon size={16} className="text-green-500" />
-                <span className="text-xs text-green-600">
-                  API keys configured
-                </span>
-              </>
-            ) : (
-              <>
-                <XCircleIcon size={16} className="text-red-500" />
-                <span className="text-xs text-red-600">API keys missing</span>
-              </>
-            )
-          ) : (
-            <span className="text-xs text-green-600">Using .env API keys</span>
-          )}
-        </button>
-
         {/* Model Selector with Dropdown */}
         <div className="relative">
           <button
@@ -396,6 +281,8 @@ export function MultimodalInput({
               onValueChange={([value]) => setDepth(value)}
             />
           </div>
+
+          <BrainLinkButton appClientId="5e476497-d7a1-4d27-8ad3-616210cf754d" />
         </div>
 
         {/* Desktop Download Button */}

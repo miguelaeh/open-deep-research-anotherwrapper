@@ -58,7 +58,6 @@ This project is proudly sponsored by [AnotherWrapper](https://anotherwrapper.com
    Create `.env.local` and add:
 
    ```bash
-   OPENAI_API_KEY=your-openai-api-key
    FIRECRAWL_KEY=your-firecrawl-api-key
    NEXT_PUBLIC_ENABLE_API_KEYS=false  # Set to false to disable API key dialog
    ```

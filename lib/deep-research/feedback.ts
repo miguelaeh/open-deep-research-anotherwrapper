@@ -7,7 +7,7 @@ import { systemPrompt } from './prompt';
 export async function generateFeedback({
   query,
   numQuestions = 3,
-  modelId = 'o3-mini',
+  modelId = 'openai/o3-mini',
   apiKey,
 }: {
   query: string;
@@ -15,7 +15,7 @@ export async function generateFeedback({
   modelId?: AIModel;
   apiKey?: string;
 }) {
-  const model = createModel(modelId, apiKey);
+  const model = createModel(modelId as AIModel, apiKey);
 
   const userFeedback = await generateObject({
     model,

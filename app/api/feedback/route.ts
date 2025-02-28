@@ -5,37 +5,25 @@ import { generateFeedback } from "@/lib/deep-research/feedback";
 
 export async function POST(req: NextRequest) {
   try {
-    const { query, numQuestions, modelId = "o3-mini" } = await req.json();
+    const { query, numQuestions, modelId = "openai/o3-mini" } = await req.json();
 
-    // Retrieve API key(s) from secure cookies
-    const openaiKey = req.cookies.get("openai-key")?.value;
-    const firecrawlKey = req.cookies.get("firecrawl-key")?.value;
-
-    // Add API key validation
-    if (process.env.NEXT_PUBLIC_ENABLE_API_KEYS === "true") {
-      if (!openaiKey || !firecrawlKey) {
-        return NextResponse.json(
-          { error: "API keys are required but not provided" },
-          { status: 401 }
-        );
-      }
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const brainLinkAccesstoken = authHeader.split(" ")[1];
 
     console.log("\n🔍 [FEEDBACK ROUTE] === Request Started ===");
     console.log("Query:", query);
     console.log("Model ID:", modelId);
     console.log("Number of Questions:", numQuestions);
-    console.log("API Keys Present:", {
-      OpenAI: openaiKey ? "✅" : "❌",
-      FireCrawl: firecrawlKey ? "✅" : "❌",
-    });
 
     try {
       const questions = await generateFeedback({
         query,
         numQuestions,
         modelId: modelId as AIModel,
-        apiKey: openaiKey,
+        apiKey: brainLinkAccesstoken,
       });
 
       console.log("\n✅ [FEEDBACK ROUTE] === Success ===");
