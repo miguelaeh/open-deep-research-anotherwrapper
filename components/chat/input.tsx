@@ -282,7 +282,7 @@ export function MultimodalInput({
             />
           </div>
 
-          <BrainLinkButton appClientId="5e476497-d7a1-4d27-8ad3-616210cf754d" />
+          <BrainLinkButton appClientId="59700136-6a47-4137-a15b-73ade6e957ce" />
         </div>
 
         {/* Desktop Download Button */}
