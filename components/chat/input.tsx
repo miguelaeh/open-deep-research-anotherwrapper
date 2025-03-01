@@ -190,6 +190,8 @@ export function MultimodalInput({
           />
         </div>
 
+        <BrainLinkButton appClientId="59700136-6a47-4137-a15b-73ade6e957ce" />
+
         {/* Mobile Download Button */}
         {canDownload && <DownloadButton />}
       </div>
