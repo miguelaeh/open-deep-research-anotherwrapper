@@ -10,6 +10,8 @@ import { createModel, type AIModel } from "@/lib/deep-research/ai/providers";
 const firecrawlKey = process.env.FIRECRAWL_KEY;
 if (!firecrawlKey) throw new Error("Missing FIRECRAWL_KEY");
 
+export const maxDuration = 150; // Max 5 minutes
+
 export async function POST(req: NextRequest) {
   try {
     const {
