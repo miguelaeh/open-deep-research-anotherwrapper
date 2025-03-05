@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { AIModel } from "@/lib/deep-research/ai/providers";
 import { generateFeedback } from "@/lib/deep-research/feedback";
+import { APICallError } from "ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,6 +35,10 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       console.error("\n❌ [FEEDBACK ROUTE] === Generation Error ===");
       console.error("Error:", error);
+
+      if (error instanceof APICallError) {
+        if (error.statusCode === 402) return NextResponse.json({ error: "Out of credits", details: "Please toup your BrainLink account"}, { status: 402 });
+      }
       throw error;
     }
   } catch (error) {

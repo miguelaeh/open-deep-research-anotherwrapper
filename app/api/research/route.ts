@@ -6,6 +6,7 @@ import {
   writeFinalReport,
 } from "@/lib/deep-research";
 import { createModel, type AIModel } from "@/lib/deep-research/ai/providers";
+import { APICallError } from "ai";
 
 const firecrawlKey = process.env.FIRECRAWL_KEY;
 if (!firecrawlKey) throw new Error("Missing FIRECRAWL_KEY");
@@ -112,14 +113,37 @@ export async function POST(req: NextRequest) {
         } catch (error) {
           console.error("\n❌ [RESEARCH ROUTE] === Research Process Error ===");
           console.error("Error:", error);
-          await writer.write(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                type: "error",
-                message: "Research failed",
-              })}\n\n`
-            )
-          );
+
+          if (error instanceof APICallError) {
+            if (error.statusCode === 402) {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "error",
+                    message: "Sorry, your BrainLink account run out of credits, please top up your account at https://www.brainlink.dev/dashboard",
+                  })}\n\n`
+                )
+              );
+            } else {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "error",
+                    message: "Research failed",
+                  })}\n\n`
+                )
+              );
+            }
+          } else {
+            await writer.write(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "error",
+                  message: "Research failed",
+                })}\n\n`
+              )
+            );
+          }
         } finally {
           await writer.close();
         }

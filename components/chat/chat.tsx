@@ -150,6 +150,15 @@ export function Chat({
                     content: event.report,
                   },
                 ]);
+              } else if (event.type === "error") {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now().toString(),
+                    role: "assistant",
+                    content: event.message,
+                  },
+                ]);
               } else if (event.type === "report_part") {
                 reportParts.push(event.content);
               }
@@ -247,6 +256,18 @@ export function Chat({
             modelId: config.modelId,
           }),
         });
+        if (!response.ok) {
+          if (response.status === 402) {
+            setMessages((prev) => [
+              ...prev.filter((m) => m.id !== "thinking"),
+              {
+                id: Date.now().toString(),
+                role: "assistant",
+                content: "Sorry, your BrainLink account is out of credits. Please top up your account to continue at https://www.brainlink.dev/dashboard",
+              },
+            ]);
+          }
+        }
         const data = await response.json();
         const questions: string[] = data.questions || [];
         setMessages((prev) => {
